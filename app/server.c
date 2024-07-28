@@ -55,9 +55,43 @@ int main() {
 
 	int fd = accept(server_fd, (struct sockaddr *) &client_addr, &client_addr_len);
 	printf("Client connected\n");
-	send(fd, "HTTP/1.1 200 OK\r\n\r\n", strlen("HTTP/1.1 200 OK\r\n\r\n"), MSG_EOR);
+
+	// buffer for the incoming request
+	char reqBuff[1024];
+	recv(fd, reqBuff, sizeof(reqBuff), 0);
+
+	printf(reqBuff);
+
+	char *path = NULL;
+	char *first_space = strchr(reqBuff, ' ');
+
+	if (first_space) {
+	   char *second_space = strchr(first_space + 1, ' ');
+		if (second_space) {
+		  int path_length = second_space - (first_space + 1);
+			path = malloc(path_length + 1);
+			if (path) {
+			    strncpy(path, first_space + 1, path_length);
+				path[path_length] = '\0';
+				printf("Extracted path: %s\n", path);
+			}
+		}
+	}
+
+
+
+	if (strcmp(path, "/") == 0) {
+	   send(fd, "HTTP/1.1 200 OK\r\n\r\n", strlen("HTTP/1.1 200 OK\r\n\r\n"), MSG_EOR);
+	}
+	else {
+	   send(fd, "HTTP/1.1 404 Not Found\r\n\r\n", strlen("HTTP/1.1 404 Not Found\r\n\r\n"), MSG_EOR);
+	}
 
 	close(server_fd);
+	if (path != NULL) {
+        free(path);
+        path = NULL;
+	}
 
 	return 0;
 }
