@@ -60,27 +60,32 @@ int main() {
 	char reqBuff[1024];
 	recv(fd, reqBuff, sizeof(reqBuff), 0);
 
-	printf(reqBuff);
+	// printf(reqBuff);
 
 	char *path = NULL;
-	char *first_space = strchr(reqBuff, ' ');
 
-	if (first_space) {
-	   char *second_space = strchr(first_space + 1, ' ');
-		if (second_space) {
-		  int path_length = second_space - (first_space + 1);
-			path = malloc(path_length + 1);
-			if (path) {
-			    strncpy(path, first_space + 1, path_length);
-				path[path_length] = '\0';
-				printf("Extracted path: %s\n", path);
-			}
-		}
+	path = strtok(reqBuff, " ");
+	path = strtok(NULL, " ");
+	printf("path: %s\n",path);
+
+	char *endpoint = strtok(path, "/");
+	printf("endpoint: %s\n",endpoint);
+
+
+	if (endpoint != NULL && strcmp(endpoint, "echo") == 0) {
+	   printf("in echo");
+        char *echostr = strtok(NULL, "/");
+        printf("%s\n", echostr);
+
+        char response[256];
+
+        snprintf(response, sizeof(response),
+                "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s", strlen(echostr), echostr
+            );
+
+        send(fd, response, sizeof(response), MSG_EOR);
 	}
-
-
-
-	if (strcmp(path, "/") == 0) {
+	else if (strcmp(path, "/") == 0) {
 	   send(fd, "HTTP/1.1 200 OK\r\n\r\n", strlen("HTTP/1.1 200 OK\r\n\r\n"), MSG_EOR);
 	}
 	else {
